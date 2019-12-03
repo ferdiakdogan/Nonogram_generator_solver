@@ -60,7 +60,7 @@ def read_image(path):
     ratio = width / height
     if width > height:
         width = 25
-        height = (1/ratio)*25
+        height = (1/ratio) * 25
     else:
         height = 25
         width = ratio * 25
@@ -74,11 +74,11 @@ def read_image(path):
     titles = ['Original Image', 'Global Thresholding (v = 127)',
                 'Adaptive Mean Thresholding', 'Adaptive Gaussian Thresholding']
     images = [resized_image, th1, th2, th3]
-    for i in range(4):
-        plt.subplot(2, 2, i+1), plt.imshow(images[i], 'gray')
-        plt.title(titles[i])
-        plt.xticks([]), plt.yticks([])
-    plt.show()
+    # for i in range(4):
+    #     plt.subplot(2, 2, i+1), plt.imshow(images[i], 'gray')
+    #     plt.title(titles[i])
+    #     plt.xticks([]), plt.yticks([])
+    # plt.show()
     return th1
 
 
@@ -124,6 +124,7 @@ def build_grid():
     pygame.display.update()
 
 
+
 path = r'D:\Documents\Python\nonogram\images\apple.jpg'
 my_image = read_image(path)
 nonogram, width, height = initialize_cells(my_image)
@@ -132,6 +133,7 @@ pygame.draw.rect(screen, WHITE, (cell_width, cell_width, width, height))
 build_grid()
 nonogram.build_numbers(screen)
 lives = 3
+nonogram.auto_solve(screen, clock)
 
 
 running = True

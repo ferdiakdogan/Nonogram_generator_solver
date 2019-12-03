@@ -11,6 +11,8 @@ class Nonogram:
         self.cell_count = 0
         self.rows = []
         self.columns = []
+        self.rowzies = []
+        self.cowzies = []
         self.row_numbers = []
         self.column_numbers = []
 
@@ -28,10 +30,14 @@ class Nonogram:
     def build_numbers(self, screen):
         for i in range(self.height//self.w):
             row = [cell for cell in self.cell_dict.values() if cell.id[1] == i]
+            rowzy = [0 for cell in self.cell_dict.values() if cell.id[1] == i]
             self.rows.append(row)
+            self.rowzies.append(rowzy)
         for i in range(self.width//self.w):
             column = [cell for cell in self.cell_dict.values() if cell.id[0] == i]
+            cowzy = [0 for cell in self.cell_dict.values() if cell.id[0] == i]
             self.columns.append(column)
+            self.cowzies.append(cowzy)
         for row in self.rows:
             count = 0
             enabled = 0
@@ -97,6 +103,59 @@ class Nonogram:
             return cell
         else:
             return False
+
+    def auto_solve(self, screen, clock):
+        for i in range(len(self.rows)):
+            first_value = self.row_numbers[i][0]
+            if first_value == 0:
+                for k in range(len(self.rows[i])):
+                    clock.tick(20)
+                    self.cell_dict[(k, i)].cross(screen)
+            start = first_value - 1
+            end = len(self.rows[i]) - first_value
+            if start < end:
+                continue
+            else:
+                for k in range(end, start + 1):
+                    clock.tick(20)
+                    self.cell_dict[(k, i)].update_cell(screen, (0, 0, 0))
+            last_value = self.row_numbers[i][-1]
+            start = last_value - 1
+            end = len(self.rows[i]) - last_value
+            if start < end:
+                continue
+            else:
+                for k in range(end, start + 1):
+                    clock.tick(20)
+                    self.cell_dict[(k, i)].update_cell(screen, (0, 0, 0))
+        for i in range(len(self.columns)):
+            first_value = self.column_numbers[i][0]
+            if first_value == 0:
+                for k in range(len(self.columns[i])):
+                    clock.tick(20)
+                    self.cell_dict[(i, k)].cross(screen)
+            start = first_value - 1
+            end = len(self.columns[i]) - first_value
+            if start < end:
+                continue
+            else:
+                for k in range(end, start + 1):
+                    clock.tick(20)
+                    self.cell_dict[(i, k)].update_cell(screen, (0, 0, 0))
+            last_value = self.column_numbers[i][-1]
+            start = last_value - 1
+            end = len(self.columns[i]) - last_value
+            if start < end:
+                continue
+            else:
+                for k in range(end, start + 1):
+                    clock.tick(20)
+                    self.cell_dict[(i, k)].update_cell(screen, (0, 0, 0))
+
+
+
+
+
 
 
 
