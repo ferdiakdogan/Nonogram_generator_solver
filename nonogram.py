@@ -20,7 +20,7 @@ class Nonogram:
 
     def update_screen(self, screen):
         for cell in self.cell_dict.values():
-            cell.update_cell(screen)
+            cell.update_cell(screen, (255, 255, 255))
 
     def get_cell(self, id):
         return self.cell_dict[id]
@@ -86,6 +86,17 @@ class Nonogram:
                 textRect = text.get_rect()
                 textRect.center = (self.w + i*self.w + self.w // 2, self.height + self.w + j*self.w + self.w // 2)
                 screen.blit(text, textRect)
+
+    def check_cell(self, pos):
+        x = pos[0]
+        y = pos[1]
+        if x < self.width + self.w and y < self.height + self.w:
+            cell_x = (x - self.w) // self.w
+            cell_y = (y - self.w) // self.w
+            cell = self.cell_dict[(cell_x, cell_y)]
+            return cell
+        else:
+            return False
 
 
 

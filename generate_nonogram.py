@@ -4,11 +4,12 @@ import cv2
 from cell import Cell
 from nonogram import Nonogram
 import pygame
+import time
 
 
 WIDTH = 1000
 HEIGHT = 600
-cell_width = 18
+cell_width = 20
 FPS = 30
 
 # Define colours
@@ -27,6 +28,10 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Nonogram")
 clock = pygame.time.Clock()
 screen.fill((0, 50, 110))
+
+live_img = pygame.image.load("D:/Documents/Python/nonogram/images/heart.png").convert()
+live_img = pygame.transform.scale(live_img, (25, 25))
+live_img.set_colorkey(BLACK)
 
 def image_normalize(image):
     count = 0
@@ -92,34 +97,91 @@ def initialize_cells(my_image):
     return nonogram, width, height
 
 
+def draw_lives(lives):
+    for i in range(lives):
+        img_rect = live_img.get_rect()
+        img_rect.x = width + 100 + 30 * i
+        img_rect.y = 15
+        screen.blit(live_img, img_rect)
+
+
 def build_grid():
     # pygame.draw.rect(screen, YELLOW, (cell_width, cell_width, width, height), cell_width // 2)
     j = cell_width
+    counter = 0
     for i in range(cell_width, width + 2*cell_width, cell_width):
-        pygame.draw.line(screen, BLACK, [i, j], [i, j + height])
-        pygame.display.update()
+        if counter % 5 == 0:
+            pygame.draw.line(screen, GRAY, [i, j], [i, j + height], 5)
+        pygame.draw.line(screen, GRAY, [i, j], [i, j + height])
+        counter += 1
     i = cell_width
+    counter = 0
     for j in range(cell_width, height + 2*cell_width, cell_width):
-        pygame.draw.line(screen, BLACK, [i, j], [i + width, j])
-        pygame.display.update()
+        if counter % 5 == 0:
+            pygame.draw.line(screen, GRAY, [i, j], [i + width, j], 5)
+        pygame.draw.line(screen, GRAY, [i, j], [i + width, j])
+        counter += 1
+    pygame.display.update()
 
 
 path = r'D:\Documents\Python\nonogram\images\apple.jpg'
 my_image = read_image(path)
 nonogram, width, height = initialize_cells(my_image)
+pygame.draw.rect(screen, WHITE, (cell_width, cell_width, width, height))
+# nonogram.update_screen(screen)
 build_grid()
-nonogram.update_screen(screen)
 nonogram.build_numbers(screen)
+lives = 3
 
 
 running = True
 while running:
     # keep running at the at the right speed
     clock.tick(FPS)
-    pygame.display.update()
+    pygame.display.flip()
+    draw_lives(lives)
     # process input (events)
+    if lives == 0:
+        font = pygame.font.Font('freesansbold.ttf', 48)
+        text = font.render("GAME OVER", True, WHITE, BLACK)
+        textRect = text.get_rect()
+        textRect.center = (width // 2, height // 2)
+        screen.blit(text, textRect)
     for event in pygame.event.get():
         # check for closing the window
         if event.type == pygame.QUIT:
             running = False
             pygame.quit()
+        elif pygame.mouse.get_pressed()[0]:
+            pos = pygame.mouse.get_pos()
+            try:
+                pressed = nonogram.check_cell(pos)
+                if pressed.color == (0, 0, 0):
+                    pressed.update_cell(screen, (0, 0, 0))
+                else:
+                    pressed.update_cell(screen, RED)
+                    time.sleep(0.5)
+                    pressed.update_cell(screen, WHITE)
+                    pressed.cross(screen)
+                    lives -= 1
+                    pygame.draw.rect(screen, (0, 50, 110), (width + 100, 0, WIDTH, HEIGHT))
+            except AttributeError:
+                print("Out of bounds!")
+                break
+        elif pygame.mouse.get_pressed()[2]:
+            pos = pygame.mouse.get_pos()
+            pressed = nonogram.check_cell(pos)
+            try:
+                print(pressed.id)
+            except AttributeError:
+                print("Out of bounds!")
+                break
+            if pressed.color == (255, 255, 255):
+                pressed.cross(screen)
+            else:
+                pressed.update_cell(screen, RED)
+                time.sleep(0.5)
+                pressed.update_cell(screen, BLACK)
+                lives -= 1
+                pygame.draw.rect(screen, (0, 50, 110), (width + 100, 0, WIDTH, HEIGHT))
+
