@@ -60,7 +60,7 @@ def read_image(path):
     ratio = width / height
     if width > height:
         width = 25
-        height = (1/ratio) * 25
+        height = (1/ratio) *25
     else:
         height = 25
         width = ratio * 25
@@ -74,11 +74,11 @@ def read_image(path):
     titles = ['Original Image', 'Global Thresholding (v = 127)',
                 'Adaptive Mean Thresholding', 'Adaptive Gaussian Thresholding']
     images = [resized_image, th1, th2, th3]
-    # for i in range(4):
-    #     plt.subplot(2, 2, i+1), plt.imshow(images[i], 'gray')
-    #     plt.title(titles[i])
-    #     plt.xticks([]), plt.yticks([])
-    # plt.show()
+    for i in range(4):
+        plt.subplot(2, 2, i+1), plt.imshow(images[i], 'gray')
+        plt.title(titles[i])
+        plt.xticks([]), plt.yticks([])
+    plt.show()
     return th1
 
 
@@ -124,7 +124,6 @@ def build_grid():
     pygame.display.update()
 
 
-
 path = r'D:\Documents\Python\nonogram\images\apple.jpg'
 my_image = read_image(path)
 nonogram, width, height = initialize_cells(my_image)
@@ -133,7 +132,7 @@ pygame.draw.rect(screen, WHITE, (cell_width, cell_width, width, height))
 build_grid()
 nonogram.build_numbers(screen)
 lives = 3
-nonogram.auto_solve(screen, clock)
+nonogram.solve_nonogram(screen)
 
 
 running = True
@@ -142,6 +141,7 @@ while running:
     clock.tick(FPS)
     pygame.display.flip()
     draw_lives(lives)
+    nonogram.solve_nonogram(screen)
     # process input (events)
     if lives == 0:
         font = pygame.font.Font('freesansbold.ttf', 48)
@@ -160,11 +160,13 @@ while running:
                 pressed = nonogram.check_cell(pos)
                 if pressed.color == (0, 0, 0):
                     pressed.update_cell(screen, (0, 0, 0))
+                    pressed.state = 1
                 else:
                     pressed.update_cell(screen, RED)
                     time.sleep(0.5)
                     pressed.update_cell(screen, WHITE)
                     pressed.cross(screen)
+                    pressed.state = 0
                     lives -= 1
                     pygame.draw.rect(screen, (0, 50, 110), (width + 100, 0, WIDTH, HEIGHT))
             except AttributeError:
@@ -180,10 +182,12 @@ while running:
                 break
             if pressed.color == (255, 255, 255):
                 pressed.cross(screen)
+                pressed.state = 0
             else:
                 pressed.update_cell(screen, RED)
                 time.sleep(0.5)
                 pressed.update_cell(screen, BLACK)
+                pressed.state = 1
                 lives -= 1
                 pygame.draw.rect(screen, (0, 50, 110), (width + 100, 0, WIDTH, HEIGHT))
 

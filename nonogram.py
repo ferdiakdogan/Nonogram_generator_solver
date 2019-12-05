@@ -152,6 +152,176 @@ class Nonogram:
                     clock.tick(20)
                     self.cell_dict[(i, k)].update_cell(screen, (0, 0, 0))
 
+    def solve_nonogram(self, screen):
+        for m in range(len(self.rowzies)):
+            # INITIAL RUN: Range Estimating
+            rls = 0
+            n = len(self.rowzies[m])
+            k = len(self.row_numbers[m])
+            rjs_list = [rls]
+            rje_list = []
+            for j in range(1, k):
+                items = [(self.row_numbers[m][i] + 1) for i in range(0, j)]
+                rjs = sum(items)
+                rjs_list.append(rjs)
+            for j in range(0, k - 1):
+                items = [(self.row_numbers[m][i] + 1) for i in range(j + 1, k)]
+                rje = n - sum(items)
+                rje_list.append(rje)
+            rke = n
+            rje_list.append(rke)
+            if m == 4:
+                print(rjs_list)
+                print(rje_list)
+
+            # RULE 1.1
+            for j in range(k):
+                for i in range(n):
+                    if rje_list[j] - self.row_numbers[m][j] <= i < rjs_list[j] + self.row_numbers[m][j]:
+                        self.rows[m][i].update_cell(screen, (0, 0, 0))
+                        self.rows[m][i].state = 1
+
+            # RULE 1.2
+            for i in range(n):
+                if 0 <= i < rls or rke < i < n or self.row_numbers[m][0] == 0:
+                    self.rows[m][i].cross(screen)
+                    self.rows[m][i].state = 0
+                for j in range(k - 1):
+                    if rje_list[j] <= i < rjs_list[j + 1]:
+                        self.rows[m][i].cross(screen)
+                        self.rows[m][i].state = 0
+
+            # RULE 1.3
+            for j in range(k):
+                rjs = rjs_list[j]
+                if self.rows[m][rjs].state == 1:
+                    preempt = True
+                    for i in range(k):
+                        if rjs_list[i] <= rjs < rje_list[i] and i != j and self.row_numbers[i] != 1:
+                            preempt = False
+                    if preempt:
+                        self.rows[m][rjs - 1].cross(screen)
+                        self.rows[m][rjs - 1].state = 0
+
+            # RULE 1.4
+            for i in range(1, n - 1):
+                if self.rows[m][i - 1].state == 1 and self.rows[m][i + 1].state == 1 and self.rows[m][i].state == -1:
+                    maxl = 0
+                    for j in range(k):
+                        if rjs_list[j] <= i < rje_list[j]:
+                            if self.row_numbers[m][j] > maxl:
+                                maxl = self.row_numbers[m][j]
+                    started = 0
+                    enabled = 0
+                    segmentl = 0
+                    self.rows[m][i].state = 1
+                    for cell in self.rows[m]:
+                        if cell == self.rows[m][i]:
+                            enabled = 1
+                        if cell.state == 1:
+                            started += 1
+                        else:
+                            if enabled:
+                                segmentl = started
+                            started = 0
+                    if segmentl > maxl:
+                        self.rows[m][i].cross(screen)
+                        self.rows[m][i].state = 0
+                    else:
+                        self.rows[m][i].state = -1
+
+            # RULE 1.5
+            for i in range(1, n):
+                if self.rows[m][i - 1] != 1 and self.rows[m][i] == 1:
+                    minl = 1000
+                    for j in range(k):
+                        if rjs_list[j] <= i < rje_list[j]:
+                            if self.row_numbers[m][j] < minl:
+                                minl = self.row_numbers[m][j]
+                    distance = 1000
+                    closest = 1000
+                    for t in range(i - minl + 1, i):
+                        if self.rows[m][t].state == 0:
+                            if (i - t) < distance:
+                                distance = i - t
+                                closest = t
+                    if distance != 1000:
+                        for p in range(i + 1, closest + minl):
+                            self.rows[m][p].update_cell(screen, (0, 0, 0))
+                            self.rows[m][p].state = 1
+                    distance = 1000
+                    closest = 1000
+                    for t in range(i + 1, i + minl):
+                        if self.rows[m][t].state == 0:
+                            if (i - t) < distance:
+                                distance = i - t
+                                closest = t
+                    if distance != 1000:
+                        for p in range(n - minl, i - 1):
+                            self.rows[m][p].update_cell(screen, (0, 0, 0))
+                            self.rows[m][p].state = 1
+                    enabled = 0
+                    started = 0
+                    counter = 0
+                    segmentl = 0
+                    start = 0
+                    end = 0
+                    for cell in self.rows[m]:
+                        if cell == self.rows[m][i]:
+                            enabled = 1
+                            counter += 1
+                        if cell.state == 1:
+                            started += 1
+                        else:
+                            if enabled:
+                                segmentl = started
+                                end = counter + i
+                                start = end - segmentl
+                            started = 0
+                    enabled = 1
+                    for j in range(k):
+                        if rjs_list[j] <= i < rje_list[j]:
+                            if self.row_numbers[m][j] != segmentl:
+                                enabled = 0
+                    if enabled:
+                        self.rows[m][start - 1].cross(screen)
+                        self.rows[m][start - 1].state = 0
+                        self.rows[m][end].cross(screen)
+                        self.rows[m][end].state = 0
+
+            # RULE 2.1
+            for j in range(k):
+                if j != 0 and rjs_list[j] <= rjs_list[j - 1]:
+                    rjs_list[j] = rjs_list[j - 1] + self.row_numbers[m][j - 1] + 1
+                try:
+                    if rje_list[j] >= rje_list[j + 1]:
+                        rje_list[j] = rje_list[j + 1] - self.row_numbers[m][j + 1] - 1
+                except IndexError:
+                    continue
+
+            # RULE 2.2
+            for j in range(k):
+                if j != 0 and self.rows[m][rjs_list[j - 1]].state == 1:
+                    rjs_list[j] = rjs_list[j] + 1
+                try:
+                    if self.rows[m][rje_list[j + 1]].state == 1:
+                        rje_list[j] = rje_list[j] - 1
+                except IndexError:
+                    continue
+
+            # RULE 2.3
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -8,7 +8,7 @@ class Cell:
         self.y = y
         self.color = color
         self.width = width
-        self.decided = False
+        self.state = -1
 
     def update_cell(self, screen, color):
         pygame.draw.rect(screen, color, (self.x + 2, self.y + 2, self.width - 4, self.width - 4))
