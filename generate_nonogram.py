@@ -132,8 +132,8 @@ pygame.draw.rect(screen, WHITE, (cell_width, cell_width, width, height))
 build_grid()
 nonogram.build_numbers(screen)
 lives = 3
-nonogram.solve_nonogram(screen, clock)
-nonogram.solve_nonogram_col(screen, clock)
+nonogram.solver(screen, clock)
+
 
 
 running = True
