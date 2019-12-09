@@ -152,7 +152,11 @@ class Nonogram:
                     clock.tick(20)
                     self.cell_dict[(i, k)].update_cell(screen, (0, 0, 0))
 
-    def solve_nonogram(self, screen):
+    def solve_nonogram(self, screen, clock):
+        initial = True
+        rjs = []
+        rje = []
+        k_list = []
         for m in range(len(self.rowzies)):
             # INITIAL RUN: Range Estimating
             rls = 0
@@ -162,61 +166,291 @@ class Nonogram:
             rje_list = []
             for j in range(1, k):
                 items = [(self.row_numbers[m][i] + 1) for i in range(0, j)]
-                rjs = sum(items)
-                rjs_list.append(rjs)
+                rjs_1 = sum(items)
+                rjs_list.append(rjs_1)
             for j in range(0, k - 1):
                 items = [(self.row_numbers[m][i] + 1) for i in range(j + 1, k)]
-                rje = n - sum(items)
-                rje_list.append(rje)
+                rje_1 = n - sum(items)
+                rje_list.append(rje_1)
             rke = n
             rje_list.append(rke)
-            if m == 4:
-                print(rjs_list)
-                print(rje_list)
+            rjs.append(rjs_list)
+            rje.append(rje_list)
+            k_list.append(k)
+        print(k_list)
+        while True:
+            for m in range(len(self.rowzies)):
+                # RULE 1.1
+                for j in range(k_list[m]):
+                    for i in range(n):
+                        if rje[m][j] - self.row_numbers[m][j] <= i < rjs[m][j] + self.row_numbers[m][j]:
+                            self.rows[m][i].update_cell(screen, (0, 0, 0))
+                            self.rows[m][i].state = 1
+                            clock.tick(20)
 
-            # RULE 1.1
-            for j in range(k):
+                # RULE 1.2
                 for i in range(n):
-                    if rje_list[j] - self.row_numbers[m][j] <= i < rjs_list[j] + self.row_numbers[m][j]:
-                        self.rows[m][i].update_cell(screen, (0, 0, 0))
+                    if 0 <= i < rls or rke < i < n or self.row_numbers[m][0] == 0:
+                        self.rows[m][i].cross(screen)
+                        self.rows[m][i].state = 0
+                        clock.tick(20)
+                    for j in range(k_list[m] - 1):
+                        if rje[m][j] <= i < rjs[m][j + 1]:
+                            self.rows[m][i].cross(screen)
+                            self.rows[m][i].state = 0
+                            clock.tick(20)
+
+                # RULE 1.3
+                for j in range(k_list[m]):
+                    rjs_1 = rjs[m][j]
+                    if self.rows[m][rjs_1].state == 1:
+                        preempt = True
+                        for i in range(k_list[m]):
+                            if rjs[m][i] <= rjs_1 < rje[m][i] and i != j and self.row_numbers[i] != 1:
+                                preempt = False
+                        if preempt:
+                            self.rows[m][rjs_1 - 1].cross(screen)
+                            self.rows[m][rjs_1 - 1].state = 0
+                            clock.tick(20)
+                # RULE 1.4
+                for i in range(1, n - 1):
+                    if self.rows[m][i - 1].state == 1 and self.rows[m][i + 1].state == 1 and self.rows[m][i].state == -1:
+                        maxl = 0
+                        for j in range(k_list[m]):
+                            if rjs[m][j] <= i < rje[m][j]:
+                                if self.row_numbers[m][j] > maxl:
+                                    maxl = self.row_numbers[m][j]
+                        started = 0
+                        enabled = 0
+                        segmentl = 0
                         self.rows[m][i].state = 1
+                        for cell in self.rows[m]:
+                            if cell == self.rows[m][i]:
+                                enabled = 1
+                            if cell.state == 1:
+                                started += 1
+                            else:
+                                if enabled:
+                                    segmentl = started
+                                started = 0
+                        if segmentl > maxl:
+                            self.rows[m][i].cross(screen)
+                            self.rows[m][i].state = 0
+                            clock.tick(20)
+                        else:
+                            self.rows[m][i].state = -1
+
+                # RULE 1.5
+                for i in range(1, n):
+                    if self.rows[m][i - 1] != 1 and self.rows[m][i] == 1:
+                        minl = 1000
+                        for j in range(k_list[m]):
+                            if rjs[m][j] <= i < rje[m][j]:
+                                if self.row_numbers[m][j] < minl:
+                                    minl = self.row_numbers[m][j]
+                        distance = 1000
+                        closest = 1000
+                        for t in range(i - minl + 1, i):
+                            if self.rows[m][t].state == 0:
+                                if (i - t) < distance:
+                                    distance = i - t
+                                    closest = t
+                        if distance != 1000:
+                            for p in range(i + 1, closest + minl):
+                                self.rows[m][p].update_cell(screen, (0, 0, 0))
+                                self.rows[m][p].state = 1
+                                clock.tick(20)
+                                print("aaa")
+                        distance = 1000
+                        closest = 1000
+                        for t in range(i + 1, i + minl):
+                            if self.rows[m][t].state == 0:
+                                if (i - t) < distance:
+                                    distance = i - t
+                                    closest = t
+                        if distance != 1000:
+                            for p in range(n - minl, i - 1):
+                                self.rows[m][p].update_cell(screen, (0, 0, 0))
+                                self.rows[m][p].state = 1
+                                clock.tick(20)
+                                print("bbb")
+                        enabled = 0
+                        started = 0
+                        counter = 0
+                        segmentl = 0
+                        start = 0
+                        end = 0
+                        for cell in self.rows[m]:
+                            if cell == self.rows[m][i]:
+                                enabled = 1
+                                counter += 1
+                            if cell.state == 1:
+                                started += 1
+                            else:
+                                if enabled:
+                                    segmentl = started
+                                    end = counter + i
+                                    start = end - segmentl
+                                started = 0
+                        enabled = 1
+                        for j in range(k_list[m]):
+                            if rjs[m][j] <= i < rje[m][j]:
+                                if self.row_numbers[m][j] != segmentl:
+                                    enabled = 0
+                        if enabled:
+                            self.rows[m][start - 1].cross(screen)
+                            self.rows[m][start - 1].state = 0
+                            self.rows[m][end].cross(screen)
+                            self.rows[m][end].state = 0
+                            clock.tick(20)
+                            print("ccc")
+
+                # RULE 2.1
+                for j in range(k_list[m]):
+                    if j != 0 and rjs[m][j] <= rjs[m][j - 1]:
+                        rjs[m][j] = rjs[m][j - 1] + self.row_numbers[m][j - 1] + 1
+                        print("changed")
+                    try:
+                        if rje[m][j] >= rje[m][j + 1]:
+                            rje[m][j] = rje[m][j + 1] - self.row_numbers[m][j + 1] - 1
+                            print("changed")
+                    except IndexError:
+                        continue
+
+                # RULE 2.2
+                for j in range(k_list[m]):
+                    if j != 0 and self.rows[m][rjs[m][j] - 1].state == 1:
+                        rjs[m][j] = rjs[m][j] + 1
+                        print("change at", j, m)
+                    try:
+                        if self.rows[m][rje[m][j]].state == 1:
+                            rje[m][j] = rje[m][j] - 1
+                            print("change at", j, m)
+                    except IndexError:
+                        continue
+
+                # RULE 2.3
+                for j in range(k_list[m]):
+                    B = []
+                    enabled = 0
+                    started = 0
+                    counter = 0
+                    segmentl = 0
+                    start = 0
+                    end = 0
+                    for i in range(rjs[m][j], rje[m][j]):
+                        if self.rows[m][i].state == 1:
+                            if not started:
+                                start = i
+                            started = 1
+                        else:
+                            if started:
+                                end = i
+                                B.append((start, end))
+                            started = 0
+                    print(B, j, m)
+                    for start, end in B:
+                        if end - start > self.row_numbers[m][j]:
+                            if j != 0 and rje[m][j - 1] > start:
+                                rjs[m][j] = end + 1
+                            elif j != k_list[m] - 1 and rjs[m][j+1] < end:
+                                rje[m][j] = start - 1
+
+                # RULE 3.1
+                for j in range(1, k_list[m] - 1):
+                    enabled = 0
+                    for i in range(rje[m][j-1], rjs[m][j+1]):
+                        if not enabled and self.rows[m][i].state == 1:
+                            c_m = i
+                            enabled = 1
+                    enabled = 0
+                    for i in reversed(range(rje[m][j-1], rjs[m][j+1])):
+                        if not enabled and self.rows[m][i].state == 1:
+                            c_n = i
+                            enabled = 1
+                    if enabled:
+                        for idf in range(c_m, c_n):
+                            self.rows[m][idf].update_cell(screen, (0, 0, 0))
+                            self.rows[m][idf].state = 1
+                            clock.tick(20)
+                        c_u = self.row_numbers[m][j]
+                        rjs[m][j] = c_n - c_u
+                        rje[m][j] = c_m + c_u
+            break
+
+    def solve_nonogram_col(self, screen, clock):
+        initial = True
+        rjs = []
+        rje = []
+        k_list = []
+        for m in range(len(self.cowzies)):
+            # INITIAL RUN: Range Estimating
+            rls = 0
+            n = len(self.cowzies[m])
+            k = len(self.column_numbers[m])
+            rjs_list = [rls]
+            rje_list = []
+            for j in range(1, k):
+                items = [(self.column_numbers[m][i] + 1) for i in range(0, j)]
+                rjs_1 = sum(items)
+                rjs_list.append(rjs_1)
+            for j in range(0, k - 1):
+                items = [(self.column_numbers[m][i] + 1) for i in range(j + 1, k)]
+                rje_1 = n - sum(items)
+                rje_list.append(rje_1)
+            rke = n
+            rje_list.append(rke)
+            rjs.append(rjs_list)
+            rje.append(rje_list)
+            k_list.append(k)
+        print(k_list)
+        for m in range(len(self.cowzies)):
+            # RULE 1.1
+            for j in range(k_list[m]):
+                for i in range(n):
+                    if rje[m][j] - self.column_numbers[m][j] <= i < rjs[m][j] + self.column_numbers[m][j]:
+                        self.columns[m][i].update_cell(screen, (0, 0, 0))
+                        self.columns[m][i].state = 1
+                        clock.tick(20)
 
             # RULE 1.2
             for i in range(n):
-                if 0 <= i < rls or rke < i < n or self.row_numbers[m][0] == 0:
-                    self.rows[m][i].cross(screen)
-                    self.rows[m][i].state = 0
-                for j in range(k - 1):
-                    if rje_list[j] <= i < rjs_list[j + 1]:
-                        self.rows[m][i].cross(screen)
-                        self.rows[m][i].state = 0
+                if 0 <= i < rls or rke < i < n or self.column_numbers[m][0] == 0:
+                    self.columns[m][i].cross(screen)
+                    self.columns[m][i].state = 0
+                    clock.tick(20)
+                for j in range(k_list[m] - 1):
+                    if rje[m][j] <= i < rjs[m][j + 1]:
+                        self.columns[m][i].cross(screen)
+                        self.columns[m][i].state = 0
+                        clock.tick(20)
 
             # RULE 1.3
-            for j in range(k):
-                rjs = rjs_list[j]
-                if self.rows[m][rjs].state == 1:
+            for j in range(k_list[m]):
+                rjs_1 = rjs[m][j]
+                if self.columns[m][rjs_1].state == 1:
                     preempt = True
-                    for i in range(k):
-                        if rjs_list[i] <= rjs < rje_list[i] and i != j and self.row_numbers[i] != 1:
+                    for i in range(k_list[m]):
+                        if rjs[m][i] <= rjs_1 < rje[m][i] and i != j and self.row_numbers[i] != 1:
                             preempt = False
                     if preempt:
-                        self.rows[m][rjs - 1].cross(screen)
-                        self.rows[m][rjs - 1].state = 0
-
+                        self.columns[m][rjs_1 - 1].cross(screen)
+                        self.columns[m][rjs_1 - 1].state = 0
+                        clock.tick(20)
             # RULE 1.4
             for i in range(1, n - 1):
-                if self.rows[m][i - 1].state == 1 and self.rows[m][i + 1].state == 1 and self.rows[m][i].state == -1:
+                if self.columns[m][i - 1].state == 1 and self.columns[m][i + 1].state == 1 and self.columns[m][i].state == -1:
                     maxl = 0
-                    for j in range(k):
-                        if rjs_list[j] <= i < rje_list[j]:
-                            if self.row_numbers[m][j] > maxl:
-                                maxl = self.row_numbers[m][j]
+                    for j in range(k_list[m]):
+                        if rjs[m][j] <= i < rje[m][j]:
+                            if self.column_numbers[m][j] > maxl:
+                                maxl = self.column_numbers[m][j]
                     started = 0
                     enabled = 0
                     segmentl = 0
-                    self.rows[m][i].state = 1
-                    for cell in self.rows[m]:
-                        if cell == self.rows[m][i]:
+                    self.columns[m][i].state = 1
+                    for cell in self.columns[m]:
+                        if cell == self.columns[m][i]:
                             enabled = 1
                         if cell.state == 1:
                             started += 1
@@ -225,49 +459,54 @@ class Nonogram:
                                 segmentl = started
                             started = 0
                     if segmentl > maxl:
-                        self.rows[m][i].cross(screen)
-                        self.rows[m][i].state = 0
+                        self.columns[m][i].cross(screen)
+                        self.columns[m][i].state = 0
+                        clock.tick(20)
                     else:
-                        self.rows[m][i].state = -1
+                        self.columns[m][i].state = -1
 
             # RULE 1.5
             for i in range(1, n):
-                if self.rows[m][i - 1] != 1 and self.rows[m][i] == 1:
+                if self.columns[m][i - 1] != 1 and self.columns[m][i] == 1:
                     minl = 1000
-                    for j in range(k):
-                        if rjs_list[j] <= i < rje_list[j]:
-                            if self.row_numbers[m][j] < minl:
-                                minl = self.row_numbers[m][j]
+                    for j in range(k_list[m]):
+                        if rjs[m][j] <= i < rje[m][j]:
+                            if self.column_numbers[m][j] < minl:
+                                minl = self.column_numbers[m][j]
                     distance = 1000
                     closest = 1000
                     for t in range(i - minl + 1, i):
-                        if self.rows[m][t].state == 0:
+                        if self.columns[m][t].state == 0:
                             if (i - t) < distance:
                                 distance = i - t
                                 closest = t
                     if distance != 1000:
                         for p in range(i + 1, closest + minl):
-                            self.rows[m][p].update_cell(screen, (0, 0, 0))
-                            self.rows[m][p].state = 1
+                            self.columns[m][p].update_cell(screen, (0, 0, 0))
+                            self.columns[m][p].state = 1
+                            clock.tick(20)
+                            print("aaa")
                     distance = 1000
                     closest = 1000
                     for t in range(i + 1, i + minl):
-                        if self.rows[m][t].state == 0:
+                        if self.columns[m][t].state == 0:
                             if (i - t) < distance:
                                 distance = i - t
                                 closest = t
                     if distance != 1000:
                         for p in range(n - minl, i - 1):
-                            self.rows[m][p].update_cell(screen, (0, 0, 0))
-                            self.rows[m][p].state = 1
+                            self.columns[m][p].update_cell(screen, (0, 0, 0))
+                            self.columns[m][p].state = 1
+                            clock.tick(20)
+                            print("bbb")
                     enabled = 0
                     started = 0
                     counter = 0
                     segmentl = 0
                     start = 0
                     end = 0
-                    for cell in self.rows[m]:
-                        if cell == self.rows[m][i]:
+                    for cell in self.columns[m]:
+                        if cell == self.columns[m][i]:
                             enabled = 1
                             counter += 1
                         if cell.state == 1:
@@ -279,37 +518,91 @@ class Nonogram:
                                 start = end - segmentl
                             started = 0
                     enabled = 1
-                    for j in range(k):
-                        if rjs_list[j] <= i < rje_list[j]:
-                            if self.row_numbers[m][j] != segmentl:
+                    for j in range(k_list[m]):
+                        if rjs[m][j] <= i < rje[m][j]:
+                            if self.column_numbers[m][j] != segmentl:
                                 enabled = 0
                     if enabled:
-                        self.rows[m][start - 1].cross(screen)
-                        self.rows[m][start - 1].state = 0
-                        self.rows[m][end].cross(screen)
-                        self.rows[m][end].state = 0
+                        self.columns[m][start - 1].cross(screen)
+                        self.columns[m][start - 1].state = 0
+                        self.columns[m][end].cross(screen)
+                        self.columns[m][end].state = 0
+                        clock.tick(20)
+                        print("ccc")
 
             # RULE 2.1
-            for j in range(k):
-                if j != 0 and rjs_list[j] <= rjs_list[j - 1]:
-                    rjs_list[j] = rjs_list[j - 1] + self.row_numbers[m][j - 1] + 1
+            for j in range(k_list[m]):
+                if j != 0 and rjs[m][j] <= rjs[m][j - 1]:
+                    rjs[m][j] = rjs[m][j - 1] + self.column_numbers[m][j - 1] + 1
+                    print("changed")
                 try:
-                    if rje_list[j] >= rje_list[j + 1]:
-                        rje_list[j] = rje_list[j + 1] - self.row_numbers[m][j + 1] - 1
+                    if rje[m][j] >= rje[m][j + 1]:
+                        rje[m][j] = rje[m][j + 1] - self.column_numbers[m][j + 1] - 1
+                        print("changed")
                 except IndexError:
                     continue
 
             # RULE 2.2
-            for j in range(k):
-                if j != 0 and self.rows[m][rjs_list[j - 1]].state == 1:
-                    rjs_list[j] = rjs_list[j] + 1
+            for j in range(k_list[m]):
+                if j != 0 and self.columns[m][rjs[m][j] - 1].state == 1:
+                    rjs[m][j] = rjs[m][j] + 1
+                    print("change at", j, m)
                 try:
-                    if self.rows[m][rje_list[j + 1]].state == 1:
-                        rje_list[j] = rje_list[j] - 1
+                    if self.columns[m][rje[m][j]].state == 1:
+                        rje[m][j] = rje[m][j] - 1
+                        print("change at", j, m)
                 except IndexError:
                     continue
 
             # RULE 2.3
+            for j in range(k_list[m]):
+                B = []
+                enabled = 0
+                started = 0
+                counter = 0
+                segmentl = 0
+                start = 0
+                end = 0
+                for i in range(rjs[m][j], rje[m][j]):
+                    if self.columns[m][i].state == 1:
+                        if not started:
+                            start = i
+                        started = 1
+                    else:
+                        if started:
+                            end = i
+                            B.append((start, end))
+                        started = 0
+                print(B, j, m)
+                for start, end in B:
+                    if end - start > self.column_numbers[m][j]:
+                        if j != 0 and rje[m][j - 1] > start:
+                            rjs[m][j] = end + 1
+                        elif j != k_list[m] - 1 and rjs[m][j+1] < end:
+                            rje[m][j] = start - 1
+
+            # RULE 3.1
+            for j in range(1, k_list[m] - 1):
+                enabled = 0
+                for i in range(rje[m][j-1], rjs[m][j+1]):
+                    if not enabled and self.columns[m][i].state == 1:
+                        c_m = i
+                        enabled = 1
+                enabled = 0
+                for i in reversed(range(rje[m][j-1], rjs[m][j+1])):
+                    if not enabled and self.columns[m][i].state == 1:
+                        c_n = i
+                        enabled = 1
+                if enabled:
+                    for idf in range(c_m, c_n):
+                        self.columns[m][idf].update_cell(screen, (0, 0, 0))
+                        self.columns[m][idf].state = 1
+                        clock.tick(20)
+                    c_u = self.column_numbers[m][j]
+                    rjs[m][j] = c_n - c_u
+                    rje[m][j] = c_m + c_u
+
+
 
 
 

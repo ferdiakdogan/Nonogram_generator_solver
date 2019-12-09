@@ -124,7 +124,7 @@ def build_grid():
     pygame.display.update()
 
 
-path = r'D:\Documents\Python\nonogram\images\apple.jpg'
+path = r'D:\Documents\Python\nonogram\images\eagle_2.png'
 my_image = read_image(path)
 nonogram, width, height = initialize_cells(my_image)
 pygame.draw.rect(screen, WHITE, (cell_width, cell_width, width, height))
@@ -132,7 +132,8 @@ pygame.draw.rect(screen, WHITE, (cell_width, cell_width, width, height))
 build_grid()
 nonogram.build_numbers(screen)
 lives = 3
-nonogram.solve_nonogram(screen)
+nonogram.solve_nonogram(screen, clock)
+nonogram.solve_nonogram_col(screen, clock)
 
 
 running = True
@@ -141,7 +142,6 @@ while running:
     clock.tick(FPS)
     pygame.display.flip()
     draw_lives(lives)
-    nonogram.solve_nonogram(screen)
     # process input (events)
     if lives == 0:
         font = pygame.font.Font('freesansbold.ttf', 48)
