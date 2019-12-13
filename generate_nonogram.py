@@ -124,7 +124,7 @@ def build_grid():
     pygame.display.update()
 
 
-path = r'D:\Documents\Python\nonogram\images\apple.jpg'
+path = r'D:\Documents\Python\nonogram\images\eagle_2.png'
 my_image = read_image(path)
 nonogram, width, height = initialize_cells(my_image)
 pygame.draw.rect(screen, WHITE, (cell_width, cell_width, width, height))
@@ -133,8 +133,6 @@ build_grid()
 nonogram.build_numbers(screen)
 lives = 3
 nonogram.solver(screen, clock)
-
-
 
 running = True
 while running:

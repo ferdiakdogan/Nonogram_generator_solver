@@ -613,6 +613,7 @@ class Nonogram:
         last_cell_r = []
         first_cell_c = []
         last_cell_c = []
+        changed = True
         for m in range(len(self.rowzies)):
             # INITIAL RUN: Range Estimating
             n = len(self.rowzies[m])
@@ -655,8 +656,10 @@ class Nonogram:
             first_cell_c.append(0)
             last_cell_c.append(n)
 
-        while True:
-            print(starts_r[13], ends_r[13], first_cell_r[13], last_cell_r[13])
+        for q in range(20):
+            rows_copy = self.rows
+            changed = False
+            print(starts_r[4], ends_r[4], first_cell_r[4], last_cell_r[4], self.row_numbers[4])
             for m in range(len(self.rowzies)):
                 # Color initials
                 for j in range(segments_r[m]):
@@ -664,7 +667,7 @@ class Nonogram:
                         if ends_r[m][j] - self.row_numbers[m][j] <= i < starts_r[m][j] + self.row_numbers[m][j]:
                             self.rows[m][i].update_cell(screen, (0, 0, 0))
                             self.rows[m][i].state = 1
-                            clock.tick(20)
+                            #clock.tick(20)
 
                 # Cross initials
                 for i in range(first_cell_r[m], last_cell_r[m]):
@@ -672,31 +675,33 @@ class Nonogram:
                         if self.row_numbers[m][0] == 0:
                             self.rows[m][i].cross(screen)
                             self.rows[m][i].state = 0
-                            clock.tick(20)
+                            #clock.tick(20)
                     except IndexError:
                         pass
                     if 0 <= i < first_cell_r[m] or last_cell_r[m] < i < n:
                         self.rows[m][i].cross(screen)
                         self.rows[m][i].state = 0
-                        clock.tick(20)
+                        #clock.tick(20)
                     for j in range(segments_r[m] - 1):
                         if ends_r[m][j] <= i < starts_r[m][j + 1]:
                             self.rows[m][i].cross(screen)
                             self.rows[m][i].state = 0
-                            clock.tick(20)
+                            #clock.tick(20)
 
                 # Update ranges
                 for i in range(first_cell_r[m], last_cell_r[m]):
                     if self.rows[m][i].state == 0:
                         first_cell_r[m] += 1
                         starts_r[m][0] += 1
+                        changed = True
                     elif self.rows[m][i].state == 1:
                         starts_r[m][0] = i
                         ends_r[m][0] = starts_r[m][0] + self.row_numbers[m][0]
+                        changed = True
                         for i in range(starts_r[m][0], ends_r[m][0]):
                             self.rows[m][i].update_cell(screen, (0, 0, 0))
                             self.rows[m][i].state = 1
-                            clock.tick(20)
+                            #clock.tick(20)
                         try:
                             self.rows[m][i + 1].cross(screen)
                             self.rows[m][i + 1].state = 0
@@ -716,13 +721,15 @@ class Nonogram:
                     if self.rows[m][i].state == 0:
                         last_cell_r[m] -= 1
                         ends_r[m][-1] -= 1
+                        changed = True
                     elif self.rows[m][i].state == 1:
                         ends_r[m][-1] = i + 1
                         starts_r[m][-1] = ends_r[m][-1] - self.row_numbers[m][-1]
+                        changed = True
                         for i in reversed(range(starts_r[m][-1], ends_r[m][-1])):
                             self.rows[m][i].update_cell(screen, (0, 0, 0))
                             self.rows[m][i].state = 1
-                            clock.tick(20)
+                            #clock.tick(20)
                         try:
                             self.rows[m][i - 1].cross(screen)
                             self.rows[m][i - 1].state = 0
@@ -733,40 +740,51 @@ class Nonogram:
                         starts_r[m].pop(-1)
                         ends_r[m].pop(-1)
                         segments_r[m] -= 1
+                        if not self.row_numbers[m]:
+                            first_cell_r[m] = last_cell_r[m] + 1
                         break
                     else:
                         break
+                try:
+                    starts_r[m][0] = first_cell_r[m]
+                    ends_r[m][-1] = last_cell_r[m]
+                except IndexError:
+                    pass
                 for j in range(1, segments_r[m]):
                     items = [(self.row_numbers[m][i] + 1) for i in range(0, j)]
                     segment = sum(items)
                     starts_r[m][j] = segment + first_cell_r[m]
+
                 for j in range(0, segments_r[m] - 1):
                     items = [(self.row_numbers[m][i] + 1) for i in range(j + 1, segments_r[m])]
-                    segment = n - sum(items)
-                    ends_r[m][j] = segment + n - last_cell_r[m]
+                    segment = sum(items)
+                    ends_r[m][j] = - segment + last_cell_r[m]
 
                 enabled = False
                 for i in range(first_cell_r[m], last_cell_r[m]):
                     if i < first_cell_r[m] + self.row_numbers[m][0]:
                         if self.rows[m][i].state == 1:
+                            changed = True
                             enabled = True
                         if enabled:
                             self.rows[m][i].update_cell(screen, (0, 0, 0))
                             self.rows[m][i].state = 1
-                            clock.tick(20)
+                            #clock.tick(20)
                     else:
                         if self.rows[m][i].state == 1:
                             self.rows[m][first_cell_r[m]].cross(screen)
                             self.rows[m][first_cell_r[m]].state = 0
                             first_cell_r[m] += 1
                             starts_r[m][0] += 1
+                            changed = True
                         elif self.rows[m][i].state == 0 and enabled:
                             ends_r[m][0] = i
                             starts_r[m][0] = i - self.row_numbers[m][0]
+                            changed = True
                             for p in range(starts_r[m][0], ends_r[m][0]):
                                 self.rows[m][p].update_cell(screen, (0, 0, 0))
                                 self.rows[m][p].state = 1
-                                clock.tick(20)
+                                #clock.tick(20)
                             self.row_numbers[m].pop(0)
                             starts_r[m].pop(0)
                             ends_r[m].pop(0)
@@ -784,22 +802,25 @@ class Nonogram:
                         if self.rows[m][i].state == 1:
                             enabled = True
                         if enabled:
+                            changed = True
                             self.rows[m][i].update_cell(screen, (0, 0, 0))
                             self.rows[m][i].state = 1
-                            clock.tick(20)
+                            #clock.tick(20)
                     else:
                         if self.rows[m][i].state == 1:
                             self.rows[m][last_cell_r[m] - 1].cross(screen)
                             self.rows[m][last_cell_r[m] - 1].state = 0
                             ends_r[m][-1] -= 1
                             last_cell_r[m] -= 1
+                            changed = True
                         elif self.rows[m][i].state == 0 and enabled:
                             starts_r[m][-1] = i + 1
-                            ends_r[m][-1] = i + 1 + self.row_numbers[m][0]
+                            ends_r[m][-1] = starts_r[m][-1] + self.row_numbers[m][-1]
+                            changed = True
                             for p in range(starts_r[m][-1], ends_r[m][-1]):
                                 self.rows[m][p].update_cell(screen, (0, 0, 0))
                                 self.rows[m][p].state = 1
-                                clock.tick(20)
+                                #clock.tick(20)
                             self.row_numbers[m].pop(-1)
                             starts_r[m].pop(-1)
                             ends_r[m].pop(-1)
@@ -818,32 +839,34 @@ class Nonogram:
                         if ends_c[m][j] - self.column_numbers[m][j] <= i < starts_c[m][j] + self.column_numbers[m][j]:
                             self.columns[m][i].update_cell(screen, (0, 0, 0))
                             self.columns[m][i].state = 1
-                            clock.tick(20)
+                            #clock.tick(20)
 
                 # RULE 1.2
                 for i in range(last_cell_c[m]):
                     if 0 <= i < first_cell_c[m] or last_cell_c[m] < i < n or self.column_numbers[m][0] == 0:
                         self.columns[m][i].cross(screen)
                         self.columns[m][i].state = 0
-                        clock.tick(20)
+                        #clock.tick(20)
                     for j in range(segments_c[m] - 1):
                         if ends_c[m][j] <= i < starts_c[m][j + 1]:
                             self.columns[m][i].cross(screen)
                             self.columns[m][i].state = 0
-                            clock.tick(20)
+                            #clock.tick(20)
 
                 # Update ranges
                 for i in range(first_cell_c[m], last_cell_c[m]):
                     if self.columns[m][i].state == 0:
                         first_cell_c[m] += 1
                         starts_c[m][0] += 1
+                        changed = True
                     elif self.columns[m][i].state == 1:
                         starts_c[m][0] = i
                         ends_c[m][0] = starts_c[m][0] + self.column_numbers[m][0]
+                        changed = True
                         for i in range(starts_c[m][0], ends_c[m][0]):
                             self.columns[m][i].update_cell(screen, (0, 0, 0))
                             self.columns[m][i].state = 1
-                            clock.tick(20)
+                            #clock.tick(20)
                         self.columns[m][i + 1].cross(screen)
                         self.columns[m][i + 1].state = 0
                         first_cell_c[m] = i + 2
@@ -851,6 +874,8 @@ class Nonogram:
                         starts_c[m].pop(0)
                         ends_c[m].pop(0)
                         segments_c[m] -= 1
+                        if not self.column_numbers[m]:
+                            first_cell_c[m] = last_cell_c[m] + 1
                         break
                     else:
                         break
@@ -859,13 +884,15 @@ class Nonogram:
                     if self.columns[m][i].state == 0:
                         last_cell_c[m] -= 1
                         ends_c[m][-1] -= 1
+                        changed = True
                     elif self.columns[m][i].state == 1:
                         ends_c[m][-1] = i + 1
                         starts_c[m][-1] = ends_c[m][-1] - self.column_numbers[m][-1]
+                        changed = True
                         for i in reversed(range(starts_c[m][-1], ends_c[m][-1])):
                             self.columns[m][i].update_cell(screen, (0, 0, 0))
                             self.columns[m][i].state = 1
-                            clock.tick(20)
+                            #clock.tick(20)
                         self.columns[m][i - 1].cross(screen)
                         self.columns[m][i - 1].state = 0
                         last_cell_c[m] = i - 2
@@ -873,10 +900,17 @@ class Nonogram:
                         starts_c[m].pop(-1)
                         ends_c[m].pop(-1)
                         segments_c[m] -= 1
+                        if not self.column_numbers[m]:
+                            first_cell_c[m] = last_cell_c[m] + 1
                         break
                     else:
                         break
 
+                try:
+                    starts_c[m][0] = first_cell_c[m]
+                    ends_c[m][-1] = last_cell_c[m]
+                except IndexError:
+                    pass
                 for j in range(1, segments_c[m]):
                     items = [(self.column_numbers[m][i] + 1) for i in range(0, j)]
                     segment = sum(items)
@@ -891,28 +925,33 @@ class Nonogram:
                     if i < first_cell_c[m] + self.column_numbers[m][0]:
                         if self.columns[m][i].state == 1:
                             enabled = True
+                            changed = True
                         if enabled:
                             self.columns[m][i].update_cell(screen, (0, 0, 0))
                             self.columns[m][i].state = 1
-                            clock.tick(20)
+                            #clock.tick(20)
                     else:
                         if self.columns[m][i].state == 1:
                             self.columns[m][first_cell_c[m]].cross(screen)
                             self.columns[m][first_cell_c[m]].state = 0
                             first_cell_c[m] += 1
                             starts_c[m][0] += 1
+                            changed = True
                         elif self.columns[m][i].state == 0 and enabled:
                             ends_c[m][0] = i
                             starts_c[m][0] = i - self.column_numbers[m][0]
+                            changed = True
                             for p in range(starts_c[m][0], ends_c[m][0]):
                                 self.columns[m][p].update_cell(screen, (0, 0, 0))
                                 self.columns[m][p].state = 1
-                                clock.tick(20)
+                                #clock.tick(20)
                             self.column_numbers[m].pop(0)
                             starts_c[m].pop(0)
                             ends_c[m].pop(0)
                             segments_c[m] -= 1
                             first_cell_c[m] = i + 1
+                            if not self.column_numbers[m]:
+                                first_cell_c[m] = last_cell_c[m] + 1
                             break
                         else:
                             break
@@ -925,30 +964,48 @@ class Nonogram:
                         if enabled:
                             self.columns[m][i].update_cell(screen, (0, 0, 0))
                             self.columns[m][i].state = 1
-                            clock.tick(20)
+                            #clock.tick(20)
                     else:
                         if self.columns[m][i].state == 1:
                             self.columns[m][last_cell_c[m] - 1].cross(screen)
                             self.columns[m][last_cell_c[m] - 1].state = 0
                             ends_c[m][-1] -= 1
                             last_cell_c[m] -= 1
+                            changed = True
                         elif self.columns[m][i].state == 0 and enabled:
                             starts_c[m][-1] = i + 1
-                            ends_c[m][-1] = i + 1 + self.column_numbers[m][0]
+                            ends_c[m][-1] = i + 1 + self.column_numbers[m][-1]
+                            changed = True
                             for p in range(starts_c[m][-1], ends_c[m][-1]):
                                 self.columns[m][p].update_cell(screen, (0, 0, 0))
                                 self.columns[m][p].state = 1
-                                clock.tick(20)
+                                #clock.tick(20)
                             self.column_numbers[m].pop(-1)
                             starts_c[m].pop(-1)
                             ends_c[m].pop(-1)
                             segments_c[m] -= 1
                             last_cell_c[m] = i
+                            if not self.column_numbers[m]:
+                                first_cell_c[m] = last_cell_c[m] + 1
                             break
                         else:
                             break
 
-
+            if rows_copy == self.rows:
+                changed = False
+            else:
+                changed = True
+            print(changed)
+            # print(starts_r_copy == starts_r)
+            # print(ends_r_copy == ends_r)
+            # print(ends_c_copy == ends_c)
+            # print(starts_c_copy == starts_c)
+            # if starts_r_copy == starts_r and ends_r_copy == ends_r and starts_c_copy == starts_c and ends_c_copy == ends_c and :
+            #     changed = False
+            #     print("aaaaaaaaaaa")
+            # else:
+            #     print("bbbbbbbbbbb")
+            #     changed = True
 
 
 
